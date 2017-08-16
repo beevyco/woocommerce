@@ -24,12 +24,6 @@ class WC_Admin_Setup_Wizard {
 	/** @var array Steps for the setup wizard */
 	private $steps  = array();
 
-	/** @var array Tweets user can optionally send after install */
-	private $tweets = array(
-		'Someone give me woo-t, I just set up a new store with #WordPress and @WooCommerce!',
-		'Someone give me high five, I just set up a new store with #WordPress and @WooCommerce!',
-	);
-
 	/**
 	 * Hook in tabs.
 	 */
@@ -181,7 +175,11 @@ class WC_Admin_Setup_Wizard {
 			<?php do_action( 'admin_head' ); ?>
 		</head>
 		<body class="wc-setup wp-core-ui">
-			<h1 id="wc-logo"><a href="https://woocommerce.com/"><img src="<?php echo WC()->plugin_url(); ?>/assets/images/woocommerce_logo.png" alt="WooCommerce" /></a></h1>
+			<h1 id="wc-logo">
+				<img src="<?php echo WC()->plugin_url(); ?>/assets/images/woocommerce_logo.png" alt="WooCommerce" />
+				<p style="text-align: center;"><em>Hosted by beevy.co</em></p>
+			</h1>
+
 		<?php
 	}
 
@@ -191,7 +189,7 @@ class WC_Admin_Setup_Wizard {
 	public function setup_wizard_footer() {
 		?>
 			<?php if ( 'next_steps' === $this->step ) : ?>
-				<a class="wc-return-to-dashboard" href="<?php echo esc_url( admin_url() ); ?>"><?php esc_html_e( 'Return to the WordPress Dashboard', 'woocommerce' ); ?></a>
+				<a class="wc-return-to-dashboard" href="<?php echo esc_url( admin_url() ); ?>"><?php esc_html_e( 'Go Manage Your Site', 'woocommerce' ); ?></a>
 			<?php endif; ?>
 			</body>
 		</html>
@@ -582,31 +580,25 @@ class WC_Admin_Setup_Wizard {
 	 * Shipping.
 	 */
 	public function wc_setup_shipping() {
-		$dimension_unit = get_option( 'woocommerce_dimension_unit', false );
-		$weight_unit    = get_option( 'woocommerce_weight_unit', false );
-		if ( false === $dimension_unit || false === $weight_unit ) {
-			$country = get_option( 'woocommerce_default_country', '' );
-			if ( 0 === strpos( $country, 'US:' ) ) {
-				$dimension_unit = 'in';
-				$weight_unit = 'oz';
-			} else {
-				$dimension_unit = 'cm';
-				$weight_unit = 'kg';
-			}
+		$country = get_option( 'woocommerce_default_country', '' );
+		if ( 0 === strpos( $country, 'US:' ) ) {
+			$dimension_unit = 'in';
+			$weight_unit = 'oz';
+		} else {
+			$dimension_unit = 'cm';
+			$weight_unit = 'kg';
 		}
 		?>
 		<h1><?php esc_html_e( 'Shipping', 'woocommerce' ); ?></h1>
 		<form method="post">
-			<?php $this->wc_setup_wcs_tout(); ?>
-
 			<table class="form-table">
 				<tr>
 					<th scope="row"><label for="weight_unit"><?php esc_html_e( 'Weight unit', 'woocommerce' ); ?></label></th>
 					<td>
 						<select id="weight_unit" name="weight_unit" class="wc-enhanced-select">
+							<option value="lbs" <?php selected( $weight_unit, 'lbs' ); ?>><?php esc_html_e( 'lbs', 'woocommerce' ); ?></option>
 							<option value="kg" <?php selected( $weight_unit, 'kg' ); ?>><?php esc_html_e( 'kg', 'woocommerce' ); ?></option>
 							<option value="g" <?php selected( $weight_unit, 'g' ); ?>><?php esc_html_e( 'g', 'woocommerce' ); ?></option>
-							<option value="lbs" <?php selected( $weight_unit, 'lbs' ); ?>><?php esc_html_e( 'lbs', 'woocommerce' ); ?></option>
 							<option value="oz" <?php selected( $weight_unit, 'oz' ); ?>><?php esc_html_e( 'oz', 'woocommerce' ); ?></option>
 						</select>
 					</td>
@@ -615,10 +607,10 @@ class WC_Admin_Setup_Wizard {
 					<th scope="row"><label for="dimension_unit"><?php esc_html_e( 'Dimension unit', 'woocommerce' ); ?></label></th>
 					<td>
 						<select id="dimension_unit" name="dimension_unit" class="wc-enhanced-select">
+							<option value="in" <?php selected( $dimension_unit, 'in' ); ?>><?php esc_html_e( 'in', 'woocommerce' ); ?></option>
 							<option value="m" <?php selected( $dimension_unit, 'm' ); ?>><?php esc_html_e( 'm', 'woocommerce' ); ?></option>
 							<option value="cm" <?php selected( $dimension_unit, 'cm' ); ?>><?php esc_html_e( 'cm', 'woocommerce' ); ?></option>
 							<option value="mm" <?php selected( $dimension_unit, 'mm' ); ?>><?php esc_html_e( 'mm', 'woocommerce' ); ?></option>
-							<option value="in" <?php selected( $dimension_unit, 'in' ); ?>><?php esc_html_e( 'in', 'woocommerce' ); ?></option>
 							<option value="yd" <?php selected( $dimension_unit, 'yd' ); ?>><?php esc_html_e( 'yd', 'woocommerce' ); ?></option>
 						</select>
 					</td>
@@ -693,27 +685,6 @@ class WC_Admin_Setup_Wizard {
 	 */
 	protected function get_wizard_payment_gateways() {
 		$gateways = array(
-			'paypal-braintree' => array(
-				'name'        => __( 'PayPal by Braintree', 'woocommerce' ),
-				'image'       => WC()->plugin_url() . '/assets/images/paypal-braintree.png',
-				'description' => __( "Safe and secure payments using credit cards or your customer's PayPal account.", 'woocommerce' ) . ' <a href="https://wordpress.org/plugins/woocommerce-gateway-paypal-powered-by-braintree/" target="_blank">' . __( 'Learn more about PayPal', 'woocommerce' ) . '</a>',
-				'class'       => 'featured featured-row-last',
-				'repo-slug'   => 'woocommerce-gateway-paypal-powered-by-braintree',
-			),
-			'paypal-ec' => array(
-				'name'        => __( 'PayPal Express Checkout', 'woocommerce' ),
-				'image'       => WC()->plugin_url() . '/assets/images/paypal.png',
-				'description' => __( "Safe and secure payments using credit cards or your customer's PayPal account.", 'woocommerce' ) . ' <a href="https://wordpress.org/plugins/woocommerce-gateway-paypal-express-checkout/" target="_blank">' . __( 'Learn more about PayPal', 'woocommerce' ) . '</a>',
-				'class'       => 'featured featured-row-last',
-				'repo-slug'   => 'woocommerce-gateway-paypal-express-checkout',
-			),
-			'stripe' => array(
-				'name'        => __( 'Stripe', 'woocommerce' ),
-				'image'       => WC()->plugin_url() . '/assets/images/stripe.png',
-				'description' => sprintf( __( 'A modern and robust way to accept credit card payments on your store. <a href="%s" target="_blank">Learn more about Stripe</a>.', 'woocommerce' ), 'https://wordpress.org/plugins/woocommerce-gateway-stripe/' ),
-				'class'       => 'featured featured-row-first',
-				'repo-slug'   => 'woocommerce-gateway-stripe',
-			),
 			'paypal' => array(
 				'name'        => __( 'PayPal Standard', 'woocommerce' ),
 				'description' => __( 'Accept payments via PayPal using account balance or credit card.', 'woocommerce' ),
@@ -727,25 +698,7 @@ class WC_Admin_Setup_Wizard {
 						'placeholder' => __( 'PayPal email address', 'woocommerce' ),
 					),
 				),
-			),
-			'cheque' => array(
-				'name'        => _x( 'Check payments', 'Check payment method', 'woocommerce' ),
-				'description' => __( 'A simple offline gateway that lets you accept a check as method of payment.', 'woocommerce' ),
-				'image'       => '',
-				'class'       => '',
-			),
-			'bacs' => array(
-				'name'        => __( 'Bank transfer (BACS) payments', 'woocommerce' ),
-				'description' => __( 'A simple offline gateway that lets you accept BACS payment.', 'woocommerce' ),
-				'image'       => '',
-				'class'       => '',
-			),
-			'cod' => array(
-				'name'        => __( 'Cash on delivery', 'woocommerce' ),
-				'description' => __( 'A simple offline gateway that lets you accept cash on delivery.', 'woocommerce' ),
-				'image'       => '',
-				'class'       => '',
-			),
+			)
 		);
 
 		$country = WC()->countries->get_base_country();
@@ -912,22 +865,9 @@ class WC_Admin_Setup_Wizard {
 	 */
 	public function wc_setup_ready() {
 		$this->wc_setup_ready_actions();
-		shuffle( $this->tweets );
 		?>
-		<a href="https://twitter.com/share" class="twitter-share-button" data-url="https://woocommerce.com/" data-text="<?php echo esc_attr( $this->tweets[0] ); ?>" data-via="WooCommerce" data-size="large">Tweet</a>
-		<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
 
 		<h1><?php esc_html_e( 'Your store is ready!', 'woocommerce' ); ?></h1>
-
-		<?php if ( 'unknown' === get_option( 'woocommerce_allow_tracking', 'unknown' ) ) : ?>
-			<div class="woocommerce-message woocommerce-tracker">
-				<p><?php printf( __( 'Want to help make WooCommerce even more awesome? Allow WooCommerce to collect non-sensitive diagnostic data and usage information. %1$sFind out more%2$s.', 'woocommerce' ), '<a href="https://woocommerce.com/usage-tracking/" target="_blank">', '</a>' ); ?></p>
-				<p class="submit">
-					<a class="button-primary button button-large" href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'wc_tracker_optin', 'true' ), 'wc_tracker_optin', 'wc_tracker_nonce' ) ); ?>"><?php esc_html_e( 'Allow', 'woocommerce' ); ?></a>
-					<a class="button-secondary button button-large skip"  href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'wc_tracker_optout', 'true' ), 'wc_tracker_optout', 'wc_tracker_nonce' ) ); ?>"><?php esc_html_e( 'No thanks', 'woocommerce' ); ?></a>
-				</p>
-			</div>
-		<?php endif; ?>
 
 		<div class="wc-setup-next-steps">
 			<div class="wc-setup-next-steps-first">
@@ -941,7 +881,6 @@ class WC_Admin_Setup_Wizard {
 				<h2><?php _e( 'Learn more', 'woocommerce' ); ?></h2>
 				<ul>
 					<li class="video-walkthrough"><a href="https://docs.woocommerce.com/document/woocommerce-guided-tour-videos/?utm_source=setupwizard&utm_medium=product&utm_content=videos&utm_campaign=woocommerceplugin"><?php esc_html_e( 'Watch the Guided Tour videos', 'woocommerce' ); ?></a></li>
-					<li class="newsletter"><a href="https://woocommerce.com/woocommerce-onboarding-email/?utm_source=setupwizard&utm_medium=product&utm_content=newsletter&utm_campaign=woocommerceplugin"><?php esc_html_e( 'Get eCommerce advice in your inbox', 'woocommerce' ); ?></a></li>
 					<li class="learn-more"><a href="https://docs.woocommerce.com/documentation/plugins/woocommerce/getting-started/?utm_source=setupwizard&utm_medium=product&utm_content=docs&utm_campaign=woocommerceplugin"><?php esc_html_e( 'Learn more about getting started', 'woocommerce' ); ?></a></li>
 				</ul>
 			</div>
