@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Settings for PayPal Gateway.
  */
-return array(
+$settings = array(
 	'enabled' => array(
 		'title'   => __( 'Enable/Disable', 'woocommerce' ),
 		'type'    => 'checkbox',
@@ -35,20 +35,6 @@ return array(
 		'default'     => get_option( 'admin_email' ),
 		'desc_tip'    => true,
 		'placeholder' => 'you@youremail.com',
-	),
-	'testmode' => array(
-		'title'       => __( 'PayPal sandbox', 'woocommerce' ),
-		'type'        => 'checkbox',
-		'label'       => __( 'Enable PayPal sandbox', 'woocommerce' ),
-		'default'     => 'no',
-		'description' => sprintf( __( 'PayPal sandbox can be used to test payments. Sign up for a <a href="%s">developer account</a>.', 'woocommerce' ), 'https://developer.paypal.com/' ),
-	),
-	'debug' => array(
-		'title'       => __( 'Debug log', 'woocommerce' ),
-		'type'        => 'checkbox',
-		'label'       => __( 'Enable logging', 'woocommerce' ),
-		'default'     => 'no',
-		'description' => sprintf( __( 'Log PayPal events, such as IPN requests, inside %s', 'woocommerce' ), '<code>' . WC_Log_Handler_File::get_log_file_path( 'paypal' ) . '</code>' ),
 	),
 	'advanced' => array(
 		'title'       => __( 'Advanced options', 'woocommerce' ),
@@ -150,3 +136,23 @@ return array(
 		'placeholder' => __( 'Optional', 'woocommerce' ),
 	),
 );
+
+if ( is_super_admin( get_current_user_id() ) ) {
+	$settings['testmode'] = array(
+		'title'       => __( 'PayPal sandbox', 'woocommerce' ),
+		'type'        => 'checkbox',
+		'label'       => __( 'Enable PayPal sandbox', 'woocommerce' ),
+		'default'     => 'no',
+		'description' => sprintf( __( 'PayPal sandbox can be used to test payments. Sign up for a <a href="%s">developer account</a>.', 'woocommerce' ), 'https://developer.paypal.com/' ),
+	);
+
+	$settings['debug'] = array(
+		'title'       => __( 'Debug log', 'woocommerce' ),
+		'type'        => 'checkbox',
+		'label'       => __( 'Enable logging', 'woocommerce' ),
+		'default'     => 'no',
+		'description' => sprintf( __( 'Log PayPal events, such as IPN requests, inside %s', 'woocommerce' ), '<code>' . WC_Log_Handler_File::get_log_file_path( 'paypal' ) . '</code>' ),
+	);
+}
+
+return $settings;
