@@ -46,6 +46,9 @@ class WC_Order_Item_Shipping extends WC_Order_Item {
 		} else {
 			$this->set_taxes( false );
 		}
+
+		do_action( 'woocommerce_order_item_shipping_after_calculate_taxes', $this, $calculate_tax_for );
+
 		return true;
 	}
 
@@ -219,6 +222,16 @@ class WC_Order_Item_Shipping extends WC_Order_Item {
 	 */
 	public function get_taxes( $context = 'view' ) {
 		return $this->get_prop( 'taxes', $context );
+	}
+
+	/**
+	 * Get tax class.
+	 *
+	 * @param  string $context
+	 * @return string
+	 */
+	public function get_tax_class( $context = 'view' ) {
+		return get_option( 'woocommerce_shipping_tax_class' );
 	}
 
 	/*

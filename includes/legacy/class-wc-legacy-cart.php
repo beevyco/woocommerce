@@ -21,12 +21,268 @@ if ( ! defined( 'ABSPATH' ) ) {
 abstract class WC_Legacy_Cart {
 
 	/**
+	 * Array of defaults. Not used since 3.2.
+	 *
+	 * @deprecated 3.2.0
+	 */
+	public $cart_session_data = array(
+		'cart_contents_total'         => 0,
+		'total'                       => 0,
+		'subtotal'                    => 0,
+		'subtotal_ex_tax'             => 0,
+		'tax_total'                   => 0,
+		'taxes'                       => array(),
+		'shipping_taxes'              => array(),
+		'discount_cart'               => 0,
+		'discount_cart_tax'           => 0,
+		'shipping_total'              => 0,
+		'shipping_tax_total'          => 0,
+		'coupon_discount_amounts'     => array(),
+		'coupon_discount_tax_amounts' => array(),
+		'fee_total'                   => 0,
+		'fees'                        => array(),
+	);
+
+	/**
 	 * Contains an array of coupon usage counts after they have been applied.
 	 *
 	 * @deprecated 3.2.0
 	 * @var array
 	 */
 	public $coupon_applied_count = array();
+
+	/**
+	 * Map legacy variables.
+	 *
+	 * @param string $name Property name.
+	 * @param mixed  $value Value to set.
+	 */
+	public function __isset( $name ) {
+		if ( array_key_exists( $name, $this->cart_session_data ) || 'fees' === $name ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Magic getters.
+	 *
+	 * @param string $name Property name.
+	 * @return mixed
+	 */
+	public function &__get( $name ) {
+		$value = '';
+
+		switch ( $name ) {
+			case 'dp' :
+				$value = wc_get_price_decimals();
+				break;
+			case 'prices_include_tax' :
+				$value = wc_prices_include_tax();
+				break;
+			case 'round_at_subtotal' :
+				$value = 'yes' === get_option( 'woocommerce_tax_round_at_subtotal' );
+				break;
+			case 'cart_contents_total' :
+				$value = $this->get_cart_contents_total();
+				break;
+			case 'total' :
+				$value = $this->get_total( 'edit' );
+				break;
+			case 'subtotal' :
+				$value = $this->get_subtotal() + $this->get_subtotal_tax();
+				break;
+			case 'subtotal_ex_tax' :
+				$value = $this->get_subtotal();
+				break;
+			case 'tax_total' :
+				$value = $this->get_fee_tax() + $this->get_cart_contents_tax();
+				break;
+			case 'fee_total' :
+				$value = $this->get_fee_total();
+				break;
+			case 'discount_cart' :
+				$value = $this->get_discount_total();
+				break;
+			case 'discount_cart_tax' :
+				$value = $this->get_discount_tax();
+				break;
+			case 'shipping_total' :
+				$value = $this->get_shipping_total();
+				break;
+			case 'shipping_tax_total' :
+				$value = $this->get_shipping_tax();
+				break;
+			case 'display_totals_ex_tax' :
+			case 'display_cart_ex_tax' :
+				$value = 'excl' === $this->tax_display_cart;
+				break;
+			case 'cart_contents_weight' :
+				$value = $this->get_cart_contents_weight();
+				break;
+			case 'cart_contents_count' :
+				$value = $this->get_cart_contents_count();
+				break;
+			case 'coupons' :
+				$value = $this->get_coupons();
+				break;
+
+			// Arrays returned by reference to allow modification without notices. TODO: Remove in 4.0.
+			case 'taxes' :
+				wc_deprecated_function( 'WC_Cart->taxes', '3.2', sprintf( 'getters (%s) and setters (%s)', 'WC_Cart::get_cart_contents_taxes()', 'WC_Cart::set_cart_contents_taxes()' ) );
+				$value = &$this->totals[ 'cart_contents_taxes' ];
+				break;
+			case 'shipping_taxes' :
+				wc_deprecated_function( 'WC_Cart->shipping_taxes', '3.2', sprintf( 'getters (%s) and setters (%s)', 'WC_Cart::get_shipping_taxes()', 'WC_Cart::set_shipping_taxes()' ) );
+				$value = &$this->totals[ 'shipping_taxes' ];
+				break;
+			case 'coupon_discount_amounts' :
+				$value = &$this->coupon_discount_totals;
+				break;
+			case 'coupon_discount_tax_amounts' :
+				$value = &$this->coupon_discount_tax_totals;
+				break;
+			case 'fees' :
+				wc_deprecated_function( 'WC_Cart->fees', '3.2', sprintf( 'the fees API (%s)', 'WC_Cart::get_fees' ) );
+
+				// Grab fees from the new API.
+				$new_fees   = $this->fees_api()->get_fees();
+
+				// Add new fees to the legacy prop so it can be adjusted via legacy property.
+				$this->fees = $new_fees;
+
+				// Return by reference.
+				$value = &$this->fees;
+				break;
+			// Deprecated args. TODO: Remove in 4.0.
+			case 'tax' :
+				wc_deprecated_argument( 'WC_Cart->tax', '2.3', 'Use WC_Tax directly' );
+				$this->tax = new WC_Tax();
+				$value = $this->tax;
+				break;
+			case 'discount_total':
+				wc_deprecated_argument( 'WC_Cart->discount_total', '2.3', 'After tax coupons are no longer supported. For more information see: https://woocommerce.wordpress.com/2014/12/upcoming-coupon-changes-in-woocommerce-2-3/' );
+				$value = 0;
+				break;
+		}
+		return $value;
+	}
+
+	/**
+	 * Map legacy variables to setters.
+	 *
+	 * @param string $name Property name.
+	 * @param mixed  $value Value to set.
+	 */
+	public function __set( $name, $value ) {
+		switch ( $name ) {
+			case 'cart_contents_total' :
+				$this->set_cart_contents_total( $value );
+				break;
+			case 'total' :
+				$this->set_total( $value );
+				break;
+			case 'subtotal' :
+				$this->set_subtotal( $value );
+				break;
+			case 'subtotal_ex_tax' :
+				$this->set_subtotal( $value );
+				break;
+			case 'tax_total' :
+				$this->set_cart_contents_tax( $value );
+				$this->set_fee_tax( 0 );
+				break;
+			case 'taxes' :
+				$this->set_cart_contents_taxes( $value );
+				break;
+			case 'shipping_taxes' :
+				$this->set_shipping_taxes( $value );
+				break;
+			case 'fee_total' :
+				$this->set_fee_total( $value );
+				break;
+			case 'discount_cart' :
+				$this->set_discount_total( $value );
+				break;
+			case 'discount_cart_tax' :
+				$this->set_discount_tax( $value );
+				break;
+			case 'shipping_total' :
+				$this->set_shipping_total( $value );
+				break;
+			case 'shipping_tax_total' :
+				$this->set_shipping_tax( $value );
+				break;
+			case 'coupon_discount_amounts' :
+				$this->set_coupon_discount_totals( $value );
+				break;
+			case 'coupon_discount_tax_amounts' :
+				$this->set_coupon_discount_tax_totals( $value );
+				break;
+			case 'fees' :
+				wc_deprecated_function( 'WC_Cart->fees', '3.2', sprintf( 'the fees API (%s)', 'WC_Cart::add_fee' ) );
+				$this->fees = $value;
+				break;
+			default :
+				$this->$name = $value;
+				break;
+		}
+	}
+
+	/**
+	 * Methods moved to session class in 3.2.0.
+	 */
+	public function get_cart_from_session() { $this->session->get_cart_from_session(); }
+	public function maybe_set_cart_cookies() { $this->session->maybe_set_cart_cookies(); }
+	public function set_session() { $this->session->set_session(); }
+	public function get_cart_for_session() { return $this->session->get_cart_for_session(); }
+	public function persistent_cart_update() { $this->session->persistent_cart_update(); }
+	public function persistent_cart_destroy() { $this->session->persistent_cart_destroy(); }
+
+	/**
+	 * Get the total of all cart discounts.
+	 *
+	 * @return float
+	 */
+	public function get_cart_discount_total() {
+		return $this->get_discount_total();
+	}
+
+	/**
+	 * Get the total of all cart tax discounts (used for discounts on tax inclusive prices).
+	 *
+	 * @return float
+	 */
+	public function get_cart_discount_tax_total() {
+		return $this->get_discount_tax();
+	}
+
+	/**
+	 * Renamed for consistency.
+	 *
+	 * @param string $coupon_code
+	 * @return bool	True if the coupon is applied, false if it does not exist or cannot be applied.
+	 */
+	public function add_discount( $coupon_code ) {
+		return $this->apply_coupon( $coupon_code );
+	}
+	/**
+	 * Remove taxes.
+	 *
+	 * @deprecated 3.2.0 Taxes are never calculated if customer is tax except making this function unused.
+	 */
+	public function remove_taxes() {
+		wc_deprecated_function( 'WC_Cart::remove_taxes', '3.2', '' );
+	}
+	/**
+	 * Init.
+	 *
+	 * @deprecated 3.2.0 Session is loaded via hooks rather than directly.
+	 */
+	public function init() {
+		wc_deprecated_function( 'WC_Cart::init', '3.2', '' );
+		$this->get_cart_from_session();
+	}
 
 	/**
 	 * Function to apply discounts to a product and get the discounted price (before tax is applied).
@@ -43,7 +299,7 @@ abstract class WC_Legacy_Cart {
 		$cart_item_key = $values['key'];
 		$cart_item     = $this->cart_contents[ $cart_item_key ];
 
-		return $cart_item->get_line_total();
+		return $cart_item['line_total'];
 	}
 
 	/**

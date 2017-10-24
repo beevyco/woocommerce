@@ -58,7 +58,8 @@ function wc_get_products( $args ) {
  */
 function wc_get_product( $the_product = false, $deprecated = array() ) {
 	if ( ! did_action( 'woocommerce_init' ) ) {
-		wc_doing_it_wrong( __FUNCTION__, __( 'wc_get_product should not be called before the woocommerce_init action.', 'woocommerce' ), '2.5' );
+		/* translators: 1: wc_get_product 2: woocommerce_init */
+		wc_doing_it_wrong( __FUNCTION__, sprintf( __( '%1$s should not be called before the %2$s action.', 'woocommerce' ), 'wc_get_product', 'woocommerce_init' ), '2.5' );
 		return false;
 	}
 	if ( ! empty( $deprecated ) ) {
@@ -292,19 +293,22 @@ function wc_placeholder_img( $size = 'shop_thumbnail' ) {
  *
  * Gets a formatted version of variation data or item meta.
  *
- * @param array|WC_Product_Variation $variation
- * @param bool $flat (default: false)
- * @param bool $include_names include attribute names/labels
+ * @param array|WC_Product_Variation $variation Variation object.
+ * @param bool $flat (default: false) Should this be a flat list or HTML list?
+ * @param bool $include_names include attribute names/labels in the list.
+ * @param bool $skip_attributes_in_name Do not list attributes already part of the variation name.
  * @return string
  */
-function wc_get_formatted_variation( $variation, $flat = false, $include_names = true ) {
+function wc_get_formatted_variation( $variation, $flat = false, $include_names = true, $skip_attributes_in_name = false ) {
 	$return = '';
 
 	if ( is_a( $variation, 'WC_Product_Variation' ) ) {
 		$variation_attributes = $variation->get_attributes();
 		$product              = $variation;
+		$variation_name       = $variation->get_name();
 	} else {
-		$product              = false;
+		$product        = false;
+		$variation_name = '';
 		// Remove attribute_ prefix from names.
 		$variation_attributes = array();
 		if ( is_array( $variation ) ) {
@@ -325,16 +329,17 @@ function wc_get_formatted_variation( $variation, $flat = false, $include_names =
 		$variation_list = array();
 
 		foreach ( $variation_attributes as $name => $value ) {
-			if ( ! $value ) {
-				continue;
-			}
-
-			// If this is a term slug, get the term's nice name
+			// If this is a term slug, get the term's nice name.
 			if ( taxonomy_exists( $name ) ) {
 				$term = get_term_by( 'slug', $value, $name );
 				if ( ! is_wp_error( $term ) && ! empty( $term->name ) ) {
 					$value = $term->name;
 				}
+			}
+
+			// Do not list attributes already part of the variation name.
+			if ( '' === $value || ( $skip_attributes_in_name && wc_is_attribute_in_product_name( $value, $variation_name ) ) ) {
+				continue;
 			}
 
 			if ( $include_names ) {
@@ -559,14 +564,12 @@ function wc_product_generate_unique_sku( $product_id, $sku, $index = 0 ) {
  * Get product ID by SKU.
  *
  * @since  2.3.0
- * @param  string $sku
+ * @param  string $sku Product SKU.
  * @return int
  */
 function wc_get_product_id_by_sku( $sku ) {
 	$data_store = WC_Data_Store::load( 'product' );
-	$product_id = $data_store->get_product_id_by_sku( $sku );
-
-	return ( $product_id ) ? intval( $product_id ) : 0;
+	return $data_store->get_product_id_by_sku( $sku );
 }
 
 /**

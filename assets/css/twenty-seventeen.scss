@@ -1,6 +1,7 @@
 /**
  * Twenty Seventeen integration styles
  */
+@import 'mixins';
 
 /**
  * Fonts
@@ -53,6 +54,17 @@
 /**
  * Global elements
  */
+ .woocommerce {
+	.blockUI.blockOverlay {
+		position: relative;
+		@include loader();
+	}
+
+	.loader {
+		@include loader();
+	}
+}
+
 .woocommerce-breadcrumb {
 	padding-bottom: 2em;
 	margin-bottom: 4em;
@@ -565,6 +577,10 @@ button.pswp__button--close:hover {
 
 button.pswp__button--zoom:hover {
 	background-position: -88px 0;
+}
+
+.pswp img {
+	max-width: none;
 }
 
 /**

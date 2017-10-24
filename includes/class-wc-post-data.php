@@ -42,6 +42,7 @@ class WC_Post_Data {
 		add_filter( 'update_order_item_metadata', array( __CLASS__, 'update_order_item_metadata' ), 10, 5 );
 		add_filter( 'update_post_metadata', array( __CLASS__, 'update_post_metadata' ), 10, 5 );
 		add_filter( 'wp_insert_post_data', array( __CLASS__, 'wp_insert_post_data' ) );
+		add_filter( 'oembed_response_data', array( __CLASS__, 'filter_oembed_response_data' ), 10, 2 );
 
 		// Status transitions
 		add_action( 'delete_post', array( __CLASS__, 'delete_post' ) );
@@ -66,7 +67,7 @@ class WC_Post_Data {
 	 * @return string
 	 */
 	public static function variation_post_link( $permalink, $post ) {
-		if ( isset( $post->ID, $post->post_type ) && 'product_variation' === $post->post_type && ( $variation = wc_get_product( $post->ID ) ) ) {
+		if ( isset( $post->ID, $post->post_type ) && 'product_variation' === $post->post_type && ( $variation = wc_get_product( $post->ID ) ) && $variation->get_parent_id() ) {
 			return $variation->get_permalink();
 		}
 		return $permalink;
@@ -287,6 +288,21 @@ class WC_Post_Data {
 			$data['post_title'] = 'AUTO-DRAFT';
 		}
 
+		return $data;
+	}
+
+	/**
+	 * Change embed data for certain post types.
+	 *
+	 * @since 3.2.0
+	 * @param array   $data The response data.
+	 * @param WP_Post $post The post object.
+	 * @return array
+	 */
+	public static function filter_oembed_response_data( $data, $post ) {
+		if ( in_array( $post->post_type, array( 'shop_order', 'shop_coupon' ) ) ) {
+			return array();
+		}
 		return $data;
 	}
 

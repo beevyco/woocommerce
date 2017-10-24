@@ -46,6 +46,7 @@ class WC_Coupon extends WC_Legacy_Coupon {
 		'maximum_amount'              => '',
 		'email_restrictions'          => array(),
 		'used_by'                     => array(),
+		'virtual'                     => false,
 	);
 
 	// Coupon message codes
@@ -355,6 +356,17 @@ class WC_Coupon extends WC_Legacy_Coupon {
 	}
 
 	/**
+	 * If the filter is added through the woocommerce_get_shop_coupon_data filter, it's virtual and not in the DB.
+	 *
+	 * @since 3.2.0
+	 * @param  string $context
+	 * @return boolean
+	 */
+	public function get_virtual( $context = 'view' ) {
+		return (bool) $this->get_prop( 'virtual', $context );
+	}
+
+	/**
 	 * Get discount amount for a cart item.
 	 *
 	 * @param  float $discounting_amount Amount the coupon is being applied to
@@ -447,6 +459,12 @@ class WC_Coupon extends WC_Legacy_Coupon {
 	 * @throws WC_Data_Exception
 	 */
 	public function set_amount( $amount ) {
+		if ( $amount < 0 ) {
+			$this->error( 'coupon_invalid_amount', __( 'Invalid discount amount', 'woocommerce' ) );
+		}
+		if ( 'percent' === $this->get_discount_type() && $amount > 100 ) {
+			$this->error( 'coupon_invalid_amount', __( 'Invalid discount amount', 'woocommerce' ) );
+		}
 		$this->set_prop( 'amount', wc_format_decimal( $amount ) );
 	}
 
@@ -636,6 +654,15 @@ class WC_Coupon extends WC_Legacy_Coupon {
 		$this->set_prop( 'used_by', array_filter( $used_by ) );
 	}
 
+	/**
+	 * Set coupon virtual state.
+	 * @param boolean $virtual Whether it is virtual or not.
+	 * @since 3.2.0
+	 */
+	public function set_virtual( $virtual ) {
+		$this->set_prop( 'virtual', (bool) $virtual );
+	}
+
 	/*
 	|--------------------------------------------------------------------------
 	| Other Actions
@@ -684,8 +711,10 @@ class WC_Coupon extends WC_Legacy_Coupon {
 					break;
 			}
 		}
-		$this->set_code( $code );
 		$this->set_props( $coupon );
+		$this->set_code( $code );
+		$this->set_id( 0 );
+		$this->set_virtual( true );
 	}
 
 	/**
