@@ -40,6 +40,7 @@ $settings = array(
 		'title'       => __( 'Advanced options', 'woocommerce' ),
 		'type'        => 'title',
 		'description' => '',
+	),
 	'ipn_notification' => array(
 		'title'       => __( 'IPN Email Notifications', 'woocommerce' ),
 		'type'        => 'checkbox',

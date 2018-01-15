@@ -1087,6 +1087,8 @@ class WC_Admin_Setup_Wizard {
 				),
 			)
 		);
+
+		return $gateways;
 	}
 
 	/**
@@ -1097,9 +1099,7 @@ class WC_Admin_Setup_Wizard {
 	public function get_wizard_in_cart_payment_gateways() {
 		$gateways = $this->get_wizard_available_in_cart_payment_gateways();
 
-		if ( ! current_user_can( 'install_plugins' ) ) {
-			return array( 'paypal' => $gateways['paypal'] );
-		}
+		return array( 'paypal' => $gateways['paypal'] );
 
 		$country    = WC()->countries->get_base_country();
 		$can_stripe = $this->is_stripe_supported_country( $country );
