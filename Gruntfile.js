@@ -199,6 +199,7 @@ module.exports = function( grunt ) {
 					potFilename: 'woocommerce.pot',
 					exclude: [
 						'apigen/.*',
+						'vendor/.*',
 						'tests/.*',
 						'tmp/.*'
 					]
@@ -258,6 +259,9 @@ module.exports = function( grunt ) {
 			},
 			e2e_tests: {
 				command: 'npm run --silent test'
+			},
+			e2e_tests_grep: {
+				command: 'npm run --silent test:grep "' + grunt.option( 'grep' ) + '"'
 			}
 		},
 
@@ -274,9 +278,6 @@ module.exports = function( grunt ) {
 				bin: 'vendor/bin/phpcs'
 			},
 			dist: {
-				options: {
-					standard: './phpcs.ruleset.xml'
-				},
 				src:  [
 					'**/*.php',                                                  // Include all files
 					'!apigen/**',                                                // Exclude apigen/
@@ -330,9 +331,9 @@ module.exports = function( grunt ) {
 
 	// Register tasks
 	grunt.registerTask( 'default', [
-		'jshint',
-		'uglify',
-		'css'
+		'js',
+		'css',
+		'i18n'
 	]);
 
 	grunt.registerTask( 'js', [
@@ -354,13 +355,22 @@ module.exports = function( grunt ) {
 		'shell:apigen'
 	]);
 
+	// Only an alias to 'default' task.
 	grunt.registerTask( 'dev', [
-		'default',
+		'default'
+	]);
+
+	grunt.registerTask( 'i18n', [
+		'checktextdomain',
 		'makepot'
 	]);
 
 	grunt.registerTask( 'e2e-tests', [
 		'shell:e2e_tests'
+	]);
+
+	grunt.registerTask( 'e2e-tests-grep', [
+		'shell:e2e_tests_grep'
 	]);
 
 	grunt.registerTask( 'e2e-test', [

@@ -16,7 +16,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Main WooCommerce Class.
  *
  * @class WooCommerce
- * @version	3.2.0
  */
 final class WooCommerce {
 
@@ -25,7 +24,7 @@ final class WooCommerce {
 	 *
 	 * @var string
 	 */
-	public $version = '3.2.0';
+	public $version = '3.3.0';
 
 	/**
 	 * The single instance of the class.
@@ -237,26 +236,15 @@ final class WooCommerce {
 	 */
 	private function is_request( $type ) {
 		switch ( $type ) {
-			case 'admin' :
+			case 'admin':
 				return is_admin();
-			case 'ajax' :
+			case 'ajax':
 				return defined( 'DOING_AJAX' );
-			case 'cron' :
+			case 'cron':
 				return defined( 'DOING_CRON' );
-			case 'frontend' :
+			case 'frontend':
 				return ( ! is_admin() || defined( 'DOING_AJAX' ) ) && ! defined( 'DOING_CRON' );
 		}
-	}
-
-	/**
-	 * Check the active theme.
-	 *
-	 * @since  2.6.9
-	 * @param  string $theme Theme slug to check.
-	 * @return bool
-	 */
-	private function is_active_theme( $theme ) {
-		return get_template() === $theme;
 	}
 
 	/**
@@ -275,6 +263,7 @@ final class WooCommerce {
 		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-coupon-data-store-interface.php' );
 		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-customer-data-store-interface.php' );
 		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-customer-download-data-store-interface.php' );
+		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-customer-download-log-data-store-interface.php' );
 		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-object-data-store-interface.php' );
 		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-order-data-store-interface.php' );
 		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-order-item-data-store-interface.php' );
@@ -287,6 +276,7 @@ final class WooCommerce {
 		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-shipping-zone-data-store-interface.php' );
 		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-logger-interface.php' );
 		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-log-handler-interface.php' );
+		include_once( WC_ABSPATH . 'includes/interfaces/class-wc-webhooks-data-store-interface.php' );
 
 		/**
 		 * Abstract classes.
@@ -319,11 +309,11 @@ final class WooCommerce {
 		include_once( WC_ABSPATH . 'includes/class-wc-emails.php' );
 		include_once( WC_ABSPATH . 'includes/class-wc-data-exception.php' );
 		include_once( WC_ABSPATH . 'includes/class-wc-query.php' );
-		include_once( WC_ABSPATH . 'includes/class-wc-meta-data.php' ); // Meta data internal object
+		include_once( WC_ABSPATH . 'includes/class-wc-meta-data.php' ); // Meta data internal object.
 		include_once( WC_ABSPATH . 'includes/class-wc-order-factory.php' ); // Order factory.
 		include_once( WC_ABSPATH . 'includes/class-wc-order-query.php' ); // Order query.
 		include_once( WC_ABSPATH . 'includes/class-wc-product-factory.php' ); // Product factory.
-		include_once( WC_ABSPATH . 'includes/class-wc-product-query.php' ); // Product query
+		include_once( WC_ABSPATH . 'includes/class-wc-product-query.php' ); // Product query.
 		include_once( WC_ABSPATH . 'includes/class-wc-payment-tokens.php' ); // Payment tokens controller.
 		include_once( WC_ABSPATH . 'includes/class-wc-shipping-zone.php' );
 		include_once( WC_ABSPATH . 'includes/gateways/class-wc-payment-gateway-cc.php' ); // CC Payment Gateway.
@@ -337,6 +327,8 @@ final class WooCommerce {
 		include_once( WC_ABSPATH . 'includes/class-wc-background-emailer.php' );
 		include_once( WC_ABSPATH . 'includes/class-wc-discounts.php' );
 		include_once( WC_ABSPATH . 'includes/class-wc-cart-totals.php' );
+		include_once( WC_ABSPATH . 'includes/customizer/class-wc-shop-customizer.php' );
+		include_once( WC_ABSPATH . 'includes/class-wc-regenerate-images.php' ); // Image regeneration class.
 
 		/**
 		 * Data stores - used to store and retrieve CRUD object data from the database.
@@ -359,10 +351,12 @@ final class WooCommerce {
 		include_once( WC_ABSPATH . 'includes/data-stores/class-wc-customer-data-store.php' );
 		include_once( WC_ABSPATH . 'includes/data-stores/class-wc-customer-data-store-session.php' );
 		include_once( WC_ABSPATH . 'includes/data-stores/class-wc-customer-download-data-store.php' );
+		include_once( WC_ABSPATH . 'includes/data-stores/class-wc-customer-download-log-data-store.php' );
 		include_once( WC_ABSPATH . 'includes/data-stores/class-wc-shipping-zone-data-store.php' );
 		include_once( WC_ABSPATH . 'includes/data-stores/abstract-wc-order-data-store-cpt.php' );
 		include_once( WC_ABSPATH . 'includes/data-stores/class-wc-order-data-store-cpt.php' );
 		include_once( WC_ABSPATH . 'includes/data-stores/class-wc-order-refund-data-store-cpt.php' );
+		include_once( WC_ABSPATH . 'includes/data-stores/class-wc-webhook-data-store.php' );
 
 		/**
 		 * REST API.
@@ -384,16 +378,49 @@ final class WooCommerce {
 			$this->frontend_includes();
 		}
 
-		if ( $this->is_request( 'frontend' ) || $this->is_request( 'cron' ) ) {
-			include_once( WC_ABSPATH . 'includes/class-wc-session-handler.php' );
-		}
-
 		if ( $this->is_request( 'cron' ) && 'yes' === get_option( 'woocommerce_allow_tracking', 'no' ) ) {
 			include_once( WC_ABSPATH . 'includes/class-wc-tracker.php' );
 		}
 
+		$this->theme_support_includes();
 		$this->query = new WC_Query();
 		$this->api   = new WC_API();
+	}
+
+	/**
+	 * Include classes for theme support.
+	 *
+	 * @since 3.3.0
+	 */
+	private function theme_support_includes() {
+		if ( wc_is_active_theme( array( 'twentyseventeen', 'twentysixteen', 'twentyfifteen', 'twentyfourteen', 'twentythirteen', 'twentyeleven', 'twentytwelve', 'twentyten' ) ) ) {
+			switch ( get_template() ) {
+				case 'twentyten':
+					include_once( WC_ABSPATH . 'includes/theme-support/class-wc-twenty-ten.php' );
+					break;
+				case 'twentyeleven':
+					include_once( WC_ABSPATH . 'includes/theme-support/class-wc-twenty-eleven.php' );
+					break;
+				case 'twentytwelve':
+					include_once( WC_ABSPATH . 'includes/theme-support/class-wc-twenty-twelve.php' );
+					break;
+				case 'twentythirteen':
+					include_once( WC_ABSPATH . 'includes/theme-support/class-wc-twenty-thirteen.php' );
+					break;
+				case 'twentyfourteen':
+					include_once( WC_ABSPATH . 'includes/theme-support/class-wc-twenty-fourteen.php' );
+					break;
+				case 'twentyfifteen':
+					include_once( WC_ABSPATH . 'includes/theme-support/class-wc-twenty-fifteen.php' );
+					break;
+				case 'twentysixteen':
+					include_once( WC_ABSPATH . 'includes/theme-support/class-wc-twenty-sixteen.php' );
+					break;
+				case 'twentyseventeen':
+					include_once( WC_ABSPATH . 'includes/theme-support/class-wc-twenty-seventeen.php' );
+					break;
+			}
+		}
 	}
 
 	/**
@@ -413,10 +440,7 @@ final class WooCommerce {
 		include_once( WC_ABSPATH . 'includes/class-wc-shortcodes.php' );       // Shortcodes class.
 		include_once( WC_ABSPATH . 'includes/class-wc-embed.php' );            // Embeds.
 		include_once( WC_ABSPATH . 'includes/class-wc-structured-data.php' );  // Structured Data class.
-
-		if ( $this->is_active_theme( 'twentyseventeen' ) ) {
-			include_once( WC_ABSPATH . 'includes/theme-support/class-wc-twenty-seventeen.php' );
-		}
+		include_once( WC_ABSPATH . 'includes/class-wc-session-handler.php' );  // Session handler class.
 	}
 
 	/**
@@ -445,17 +469,17 @@ final class WooCommerce {
 		$this->deprecated_hook_handlers['actions'] = new WC_Deprecated_Action_Hooks();
 		$this->deprecated_hook_handlers['filters'] = new WC_Deprecated_Filter_Hooks();
 
-		// Session class, handles session data for users - can be overwritten if custom handler is needed.
-		if ( $this->is_request( 'frontend' ) || $this->is_request( 'cron' ) ) {
-			$session_class  = apply_filters( 'woocommerce_session_handler', 'WC_Session_Handler' );
-			$this->session  = new $session_class();
-		}
-
 		// Classes/actions loaded for the frontend and for ajax requests.
 		if ( $this->is_request( 'frontend' ) ) {
-			$this->cart            = new WC_Cart();                                  // Cart class, stores the cart contents.
-			$this->customer        = new WC_Customer( get_current_user_id(), true ); // Customer class, handles data such as customer location.
-			add_action( 'shutdown', array( $this->customer, 'save' ), 10 );          // Customer should be saved during shutdown.
+			// Session class, handles session data for users - can be overwritten if custom handler is needed.
+			$session_class = apply_filters( 'woocommerce_session_handler', 'WC_Session_Handler' );
+			$this->session = new $session_class();
+			$this->session->init();
+
+			$this->cart     = new WC_Cart();                                  // Cart class, stores the cart contents.
+			$this->customer = new WC_Customer( get_current_user_id(), true ); // Customer class, handles data such as customer location.
+
+			add_action( 'shutdown', array( $this->customer, 'save' ), 10 );   // Customer should be saved during shutdown.
 		}
 
 		$this->load_webhooks();
@@ -506,16 +530,28 @@ final class WooCommerce {
 	/**
 	 * Add WC Image sizes to WP.
 	 *
+	 * As of 3.3, image sizes can be registered via themes using add_theme_support for woocommerce
+	 * and defining an array of args. If these are not defined, we will use defaults. This is
+	 * handled in wc_get_image_size function.
+	 *
+	 * 3.3 sizes:
+	 *
+	 * thumbnail - Used in product listings.
+	 * single - Used on single product pages for the main image.
+	 *
+	 * shop_thumbnail, shop_single, shop_catalog registered for bw compat. @todo remove in 4.0.
+	 *
 	 * @since 2.3
 	 */
 	private function add_image_sizes() {
-		$shop_thumbnail = wc_get_image_size( 'shop_thumbnail' );
-		$shop_catalog	= wc_get_image_size( 'shop_catalog' );
-		$shop_single	= wc_get_image_size( 'shop_single' );
+		$thumbnail = wc_get_image_size( 'thumbnail' );
+		$single    = wc_get_image_size( 'single' );
 
-		add_image_size( 'shop_thumbnail', $shop_thumbnail['width'], $shop_thumbnail['height'], $shop_thumbnail['crop'] );
-		add_image_size( 'shop_catalog', $shop_catalog['width'], $shop_catalog['height'], $shop_catalog['crop'] );
-		add_image_size( 'shop_single', $shop_single['width'], $shop_single['height'], $shop_single['crop'] );
+		add_image_size( 'woocommerce_thumbnail', $thumbnail['width'], $thumbnail['height'], $thumbnail['crop'] );
+		add_image_size( 'woocommerce_single', $single['width'], $single['height'], $single['crop'] );
+		add_image_size( 'shop_thumbnail', $thumbnail['width'], $thumbnail['height'], $thumbnail['crop'] );
+		add_image_size( 'shop_catalog', $thumbnail['width'], $thumbnail['height'], $thumbnail['crop'] );
+		add_image_size( 'shop_single', $single['width'], $single['height'], $single['crop'] );
 	}
 
 	/**
@@ -592,19 +628,7 @@ final class WooCommerce {
 			return;
 		}
 
-		if ( false === ( $webhooks = get_transient( 'woocommerce_webhook_ids' ) ) ) {
-			$webhooks = get_posts( array(
-				'fields'         => 'ids',
-				'post_type'      => 'shop_webhook',
-				'post_status'    => 'publish',
-				'posts_per_page' => -1,
-			) );
-			set_transient( 'woocommerce_webhook_ids', $webhooks );
-		}
-		foreach ( $webhooks as $webhook_id ) {
-			$webhook = new WC_Webhook( $webhook_id );
-			$webhook->enqueue();
-		}
+		wc_load_webhooks();
 	}
 
 	/**

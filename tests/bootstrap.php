@@ -59,6 +59,7 @@ class WC_Unit_Tests_Bootstrap {
 	 * @since 2.2
 	 */
 	public function load_wc() {
+		define( 'WC_TAX_ROUNDING_MODE', 'auto' );
 		require_once( $this->plugin_dir . '/woocommerce.php' );
 	}
 
@@ -93,10 +94,6 @@ class WC_Unit_Tests_Bootstrap {
 	 * @since 2.2
 	 */
 	public function includes() {
-
-		// factories
-		require_once( $this->tests_dir . '/framework/factories/class-wc-unit-test-factory-for-webhook.php' );
-		require_once( $this->tests_dir . '/framework/factories/class-wc-unit-test-factory-for-webhook-delivery.php' );
 
 		// framework
 		require_once( $this->tests_dir . '/framework/class-wc-unit-test-factory.php' );
