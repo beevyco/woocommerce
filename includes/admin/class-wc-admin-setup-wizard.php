@@ -498,7 +498,7 @@ class WC_Admin_Setup_Wizard {
 		$currency_code  = sanitize_text_field( $_POST['currency_code'] );
 		$product_type   = sanitize_text_field( $_POST['product_type'] );
 		$sell_in_person = isset( $_POST['sell_in_person'] ) && ( 'yes' === sanitize_text_field( $_POST['sell_in_person'] ) );
-		$tracking       = isset( $_POST['wc_tracker_optin'] ) && ( 'yes' === sanitize_text_field( $_POST['wc_tracker_optin'] ) );
+
 		// @codingStandardsIgnoreEnd
 		update_option( 'woocommerce_store_address', $address );
 		update_option( 'woocommerce_store_address_2', $address_2 );
@@ -523,12 +523,7 @@ class WC_Admin_Setup_Wizard {
 			update_option( 'woocommerce_price_thousand_sep', $locale_info[ $country ]['thousand_sep'] );
 		}
 
-		if ( $tracking ) {
-			update_option( 'woocommerce_allow_tracking', 'yes' );
-			WC_Tracker::send_tracking_data( true );
-		} else {
-			update_option( 'woocommerce_allow_tracking', 'no' );
-		}
+		update_option( 'woocommerce_allow_tracking', 'no' );
 
 		WC_Install::create_pages();
 		wp_safe_redirect( esc_url_raw( $this->get_next_step_link() ) );
