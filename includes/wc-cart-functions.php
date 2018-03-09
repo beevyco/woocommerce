@@ -48,7 +48,13 @@ function wc_empty_cart() {
  * @deprecated 2.3
  */
 function wc_load_persistent_cart( $user_login, $user ) {
-	if ( ! $user || ! ( $saved_cart = get_user_meta( $user->ID, '_woocommerce_persistent_cart_' . get_current_blog_id(), true ) ) ) {
+	if ( ! $user || ! apply_filters( 'woocommerce_persistent_cart_enabled', true ) ) {
+		return;
+	}
+
+	$saved_cart = get_user_meta( $user->ID, '_woocommerce_persistent_cart_' . get_current_blog_id(), true );
+
+	if ( ! $saved_cart ) {
 		return;
 	}
 
@@ -278,9 +284,10 @@ function wc_cart_totals_coupon_html( $coupon ) {
 
 	$discount_amount_html = '';
 
-	if ( $amount = WC()->cart->get_coupon_discount_amount( $coupon->get_code(), WC()->cart->display_cart_ex_tax ) ) {
-		$discount_amount_html = '-' . wc_price( $amount );
-	} elseif ( $coupon->get_free_shipping() ) {
+	$amount = WC()->cart->get_coupon_discount_amount( $coupon->get_code(), WC()->cart->display_cart_ex_tax );
+	$discount_amount_html = '-' . wc_price( $amount );
+
+	if ( $coupon->get_free_shipping() ) {
 		$discount_amount_html = __( 'Free shipping coupon', 'woocommerce' );
 	}
 
@@ -342,7 +349,7 @@ function wc_cart_totals_fee_html( $fee ) {
 function wc_cart_totals_shipping_method_label( $method ) {
 	$label = $method->get_label();
 
-	if ( $method->cost > 0 ) {
+	if ( $method->cost >= 0 && $method->get_method_id() !== 'free_shipping' ) {
 		if ( WC()->cart->display_prices_including_tax() ) {
 			$label .= ': ' . wc_price( $method->cost + $method->get_shipping_tax() );
 			if ( $method->get_shipping_tax() > 0 && ! wc_prices_include_tax() ) {
@@ -367,13 +374,7 @@ function wc_cart_totals_shipping_method_label( $method ) {
  * @return float
  */
 function wc_cart_round_discount( $value, $precision ) {
-	if ( version_compare( PHP_VERSION, '5.3.0', '>=' ) ) {
-		return round( $value, $precision, WC_DISCOUNT_ROUNDING_MODE );
-	} elseif ( 2 === WC_DISCOUNT_ROUNDING_MODE ) {
-		return wc_legacy_round_half_down( $value, $precision );
-	} else {
-		return round( $value, $precision );
-	}
+	return wc_round_discount( $value, $precision );
 }
 
 /**
@@ -473,4 +474,19 @@ function wc_shipping_methods_have_changed( $key, $package ) {
 	$previous_shipping_methods[ $key ] = $new_rates;
 	WC()->session->set( 'previous_shipping_methods', $previous_shipping_methods );
 	return $new_rates !== $prev_rates;
+}
+
+/**
+ * Gets a hash of important product data that when changed should cause cart items to be invalidated.
+ *
+ * The woocommerce_cart_item_data_to_validate filter can be used to add custom properties.
+ *
+ * @param WC_Product $product Product object.
+ * @return string
+ */
+function wc_get_cart_item_data_hash( $product ) {
+	return md5( wp_json_encode( apply_filters( 'woocommerce_cart_item_data_to_validate', array(
+		'type'       => $product->get_type(),
+		'attributes' => 'variation' === $product->get_type() ? $product->get_variation_attributes() : '',
+	) ) ) );
 }
