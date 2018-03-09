@@ -793,8 +793,6 @@ class WC_Admin_Setup_Wizard {
 		$prefixed_country_name = WC()->countries->estimated_for_prefix( $country_code ) . $country_name;
 		$currency_code         = get_woocommerce_currency();
 		$existing_zones        = WC_Shipping_Zones::get_zones();
-		$dimension_unit        = get_option( 'woocommerce_dimension_unit' );
-		$weight_unit           = get_option( 'woocommerce_weight_unit' );
 		$locale_info           = include WC()->plugin_path() . '/i18n/locale-info.php';
 
 		if ( ! empty( $existing_zones ) ) {
