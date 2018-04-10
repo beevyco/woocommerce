@@ -807,6 +807,7 @@ table.wc_status_table--tools {
 	pre {
 		font-family: monospace;
 		white-space: pre-wrap;
+		word-wrap: break-word;
 	}
 }
 
@@ -2356,7 +2357,11 @@ ul.wc_coupon_list_block {
 	}
 
 	.post-type-shop_order .wp-list-table {
+		td.check-column {
+			width: 1em;
+		}
 		td.column-order_number {
+			padding-left: 0;
 			padding-bottom: .5em;
 		}
 		td.column-order_status,
@@ -2366,6 +2371,9 @@ ul.wc_coupon_list_block {
 			&:before {
 				display: none !important;
 			}
+		}
+		td.column-order_date {
+			padding-left: 0 !important;
 		}
 		td.column-order_status {
 			float: right;
@@ -2603,8 +2611,7 @@ table.wp-list-table {
 	}
 
 	span.wc-image,
-	span.wc-featured,
-	span.wc-type {
+	span.wc-featured {
 		@include ir();
 		margin: 0 auto;
 
@@ -2625,42 +2632,6 @@ table.wp-list-table {
 	td.column-featured span.wc-featured {
 		font-size: 1.6em;
 		cursor: pointer;
-	}
-
-	span.wc-type::before {
-		font-family: 'WooCommerce';
-		content: '\e006';
-	}
-
-	span.product-type {
-		@include ir();
-		font-size: 1.6em;
-		margin: 0 auto;
-		-moz-osx-font-smoothing: grayscale;
-
-		&::before {
-			@include icon( '\e006' );
-		}
-
-		&.grouped::before {
-			content: '\e002';
-		}
-
-		&.external::before {
-			content: '\e034';
-		}
-
-		&.variable::before {
-			content: '\e003';
-		}
-
-		&.downloadable::before {
-			content: '\e001';
-		}
-
-		&.virtual::before {
-			content: '\e000';
-		}
 	}
 
 	mark {
