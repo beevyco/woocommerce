@@ -178,6 +178,24 @@ abstract class WC_Settings_API {
 	}
 
 	/**
+	 * Update a single option.
+	 *
+	 * @since 3.4.0
+	 * @param string $key Option key.
+	 * @param mixed  $value Value to set.
+	 * @return bool was anything saved?
+	 */
+	public function update_option( $key, $value = '' ) {
+		if ( empty( $this->settings ) ) {
+			$this->init_settings();
+		}
+
+		$this->settings[ $key ] = $value;
+
+		return update_option( $this->get_option_key(), apply_filters( 'woocommerce_settings_api_sanitized_fields_' . $this->id, $this->settings ) );
+	}
+
+	/**
 	 * Processes and saves options.
 	 * If there is an error thrown, will continue to save and validate fields, but will leave the erroring field out.
 	 *
@@ -405,8 +423,7 @@ abstract class WC_Settings_API {
 		?>
 		<tr valign="top">
 			<th scope="row" class="titledesc">
-				<?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?>
-				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
 			</th>
 			<td class="forminp">
 				<fieldset>
@@ -449,8 +466,7 @@ abstract class WC_Settings_API {
 		?>
 		<tr valign="top">
 			<th scope="row" class="titledesc">
-				<?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?>
-				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
 			</th>
 			<td class="forminp">
 				<fieldset>
@@ -493,8 +509,7 @@ abstract class WC_Settings_API {
 		?>
 		<tr valign="top">
 			<th scope="row" class="titledesc">
-				<?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?>
-				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
 			</th>
 			<td class="forminp">
 				<fieldset>
@@ -549,8 +564,7 @@ abstract class WC_Settings_API {
 		?>
 		<tr valign="top">
 			<th scope="row" class="titledesc">
-				<?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?>
-				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
 			</th>
 			<td class="forminp">
 				<fieldset>
@@ -595,8 +609,7 @@ abstract class WC_Settings_API {
 		?>
 		<tr valign="top">
 			<th scope="row" class="titledesc">
-				<?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?>
-				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
 			</th>
 			<td class="forminp">
 				<fieldset>
@@ -643,8 +656,7 @@ abstract class WC_Settings_API {
 		?>
 		<tr valign="top">
 			<th scope="row" class="titledesc">
-				<?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?>
-				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
 			</th>
 			<td class="forminp">
 				<fieldset>
@@ -689,8 +701,7 @@ abstract class WC_Settings_API {
 		?>
 		<tr valign="top">
 			<th scope="row" class="titledesc">
-				<?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?>
-				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
 			</th>
 			<td class="forminp">
 				<fieldset>
@@ -740,8 +751,7 @@ abstract class WC_Settings_API {
 		?>
 		<tr valign="top">
 			<th scope="row" class="titledesc">
-				<?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?>
-				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
+				<label for="<?php echo esc_attr( $field_key ); ?>"><?php echo wp_kses_post( $data['title'] ); ?> <?php echo $this->get_tooltip_html( $data ); // WPCS: XSS ok. ?></label>
 			</th>
 			<td class="forminp">
 				<fieldset>
