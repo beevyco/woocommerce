@@ -865,47 +865,6 @@ class WC_Admin_Setup_Wizard {
 		<p><?php echo wp_kses_post( $intro_text ); ?></p>
 		<form method="post">
 
-			<?php if ( empty( $existing_zones ) ) : ?>
-				<ul class="wc-wizard-services shipping">
-					<li class="wc-wizard-service-item">
-						<div class="wc-wizard-service-name">
-							<p><?php echo esc_html_e( 'Shipping Zone', 'woocommerce' ); ?></p>
-						</div>
-						<div class="wc-wizard-service-description">
-							<p><?php echo esc_html_e( 'Shipping Method', 'woocommerce' ); ?></p>
-						</div>
-					</li>
-					<li class="wc-wizard-service-item">
-						<div class="wc-wizard-service-name">
-							<p><?php echo esc_html( $country_name ); ?></p>
-						</div>
-						<div class="wc-wizard-service-description">
-							<?php $this->shipping_method_selection_form( $country_code, $currency_code, 'shipping_zones[domestic]' ); ?>
-						</div>
-						<div class="wc-wizard-service-enable">
-							<span class="wc-wizard-service-toggle">
-								<input id="shipping_zones[domestic][enabled]" type="checkbox" name="shipping_zones[domestic][enabled]" value="yes" checked="checked" class="wc-wizard-shipping-method-enable" data-plugins="true" />
-								<label for="shipping_zones[domestic][enabled]">
-							</span>
-						</div>
-					</li>
-					<li class="wc-wizard-service-item">
-						<div class="wc-wizard-service-name">
-							<p><?php echo esc_html_e( 'Locations not covered by your other zones', 'woocommerce' ); ?></p>
-						</div>
-						<div class="wc-wizard-service-description">
-							<?php $this->shipping_method_selection_form( $country_code, $currency_code, 'shipping_zones[intl]' ); ?>
-						</div>
-						<div class="wc-wizard-service-enable">
-							<span class="wc-wizard-service-toggle">
-								<input id="shipping_zones[intl][enabled]" type="checkbox" name="shipping_zones[intl][enabled]" value="yes" checked="checked" class="wc-wizard-shipping-method-enable" data-plugins="true" />
-								<label for="shipping_zones[intl][enabled]">
-							</span>
-						</div>
-					</li>
-				</ul>
-			<?php endif; ?>
-
 			<div class="wc-setup-shipping-units">
 				<div class="wc-setup-shipping-unit">
 					<p>
