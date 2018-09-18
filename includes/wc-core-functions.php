@@ -38,6 +38,7 @@ add_filter( 'woocommerce_coupon_code', 'sanitize_text_field' );
 add_filter( 'woocommerce_coupon_code', 'wc_strtolower' );
 add_filter( 'woocommerce_stock_amount', 'intval' ); // Stock amounts are integers by default.
 add_filter( 'woocommerce_shipping_rate_label', 'sanitize_text_field' ); // Shipping rate label.
+add_filter( 'woocommerce_attribute_label', 'wp_kses_post', 100 );
 
 /**
  * Short Description (excerpt).
@@ -1661,6 +1662,20 @@ function wc_get_logger() {
 }
 
 /**
+ * Trigger logging cleanup using the logging class.
+ *
+ * @since 3.4.0
+ */
+function wc_cleanup_logs() {
+	$logger = wc_get_logger();
+
+	if ( is_callable( array( $logger, 'clear_expired_logs' ) ) ) {
+		$logger->clear_expired_logs();
+	}
+}
+add_action( 'woocommerce_cleanup_logs', 'wc_cleanup_logs' );
+
+/**
  * Prints human-readable information about a variable.
  *
  * Some server environments blacklist some debugging functions. This function provides a safe way to
@@ -1718,7 +1733,6 @@ function wc_print_r( $expression, $return = false ) {
  * @return array
  */
 function wc_register_default_log_handler( $handlers ) {
-
 	if ( defined( 'WC_LOG_HANDLER' ) && class_exists( WC_LOG_HANDLER ) ) {
 		$handler_class   = WC_LOG_HANDLER;
 		$default_handler = new $handler_class();
@@ -1731,22 +1745,6 @@ function wc_register_default_log_handler( $handlers ) {
 	return $handlers;
 }
 add_filter( 'woocommerce_register_log_handlers', 'wc_register_default_log_handler' );
-
-/**
- * Store user agents. Used for tracker.
- *
- * @since 3.0.0
- * @param string     $user_login User login.
- * @param int|object $user       User.
- */
-function wc_maybe_store_user_agent( $user_login, $user ) {
-	if ( 'yes' === get_option( 'woocommerce_allow_tracking', 'no' ) && user_can( $user, 'manage_woocommerce' ) ) {
-		$admin_user_agents   = array_filter( (array) get_option( 'woocommerce_tracker_ua', array() ) );
-		$admin_user_agents[] = wc_get_user_agent();
-		update_option( 'woocommerce_tracker_ua', array_unique( $admin_user_agents ) );
-	}
-}
-add_action( 'wp_login', 'wc_maybe_store_user_agent', 10, 2 );
 
 /**
  * Based on wp_list_pluck, this calls a method instead of returning a property.
@@ -1931,6 +1929,10 @@ add_filter( 'extra_plugin_headers', 'wc_enable_wc_plugin_headers' );
  * @return bool
  */
 function wc_prevent_dangerous_auto_updates( $should_update, $plugin ) {
+	if ( ! isset( $plugin->plugin, $plugin->new_version ) ) {
+		return $should_update;
+	}
+
 	if ( 'woocommerce/woocommerce.php' !== $plugin->plugin ) {
 		return $should_update;
 	}
@@ -2104,4 +2106,32 @@ function wc_selected( $value, $options ) {
 	}
 
 	return selected( $value, $options, false );
+}
+
+/**
+ * Retrieves the MySQL server version. Based on $wpdb.
+ *
+ * @since 3.4.1
+ * @return array Vesion information.
+ */
+function wc_get_server_database_version() {
+	global $wpdb;
+
+	if ( empty( $wpdb->is_mysql ) ) {
+		return array(
+			'string' => '',
+			'number' => '',
+		);
+	}
+
+	if ( $wpdb->use_mysqli ) {
+		$server_info = mysqli_get_server_info( $wpdb->dbh ); // @codingStandardsIgnoreLine.
+	} else {
+		$server_info = mysql_get_server_info( $wpdb->dbh ); // @codingStandardsIgnoreLine.
+	}
+
+	return array(
+		'string' => $server_info,
+		'number' => preg_replace( '/([^\d.]+).*/', '', $server_info ),
+	);
 }

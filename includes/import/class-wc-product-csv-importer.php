@@ -364,6 +364,9 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 
 				if ( is_array( $term ) ) {
 					$term_id = $term['term_id'];
+					// Don't allow users without capabilities to create new categories.
+				} elseif ( ! current_user_can( 'manage_product_terms' ) ) {
+					break;
 				} else {
 					$term = wp_insert_term( $_term, 'product_cat', array( 'parent' => intval( $parent ) ) );
 
@@ -543,7 +546,7 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 	 * @return int
 	 */
 	public function parse_int_field( $value ) {
-		// Remove the ' prepended to fields that start with - if needed
+		// Remove the ' prepended to fields that start with - if needed.
 		$value = $this->unescape_negative_number( $value );
 
 		return intval( $value );

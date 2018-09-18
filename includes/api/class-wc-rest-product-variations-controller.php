@@ -290,7 +290,7 @@ class WC_REST_Product_Variations_Controller extends WC_REST_Products_Controller 
 
 		// Thumbnail.
 		if ( isset( $request['image'] ) ) {
-			if ( is_array( $request['image'] ) ) {
+			if ( is_array( $request['image'] ) && ! empty( $request['image'] ) ) {
 				$image = $request['image'];
 				if ( is_array( $image ) ) {
 					$image['position'] = 0;
@@ -401,8 +401,18 @@ class WC_REST_Product_Variations_Controller extends WC_REST_Products_Controller 
 
 		// Update taxonomies.
 		if ( isset( $request['attributes'] ) ) {
-			$attributes        = array();
-			$parent            = wc_get_product( $variation->get_parent_id() );
+			$attributes = array();
+			$parent     = wc_get_product( $variation->get_parent_id() );
+
+			if ( ! $parent ) {
+				return new WP_Error(
+					// Translators: %d parent ID.
+					"woocommerce_rest_{$this->post_type}_invalid_parent", sprintf( __( 'Cannot set attributes due to invalid parent product.', 'woocommerce' ), $variation->get_parent_id() ), array(
+						'status' => 404,
+					)
+				);
+			}
+
 			$parent_attributes = $parent->get_attributes();
 
 			foreach ( $request['attributes'] as $attribute ) {
