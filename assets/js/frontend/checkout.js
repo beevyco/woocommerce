@@ -77,21 +77,30 @@ jQuery( function( $ ) {
 				$payment_methods.eq(0).prop( 'checked', true );
 			}
 
+			if ( $payment_methods.length > 1 ) {
+
+				// Hide open descriptions.
+				$( 'div.payment_box' ).filter( ':visible' ).slideUp( 0 );
+			}
+
 			// Trigger click event for selected method
 			$payment_methods.filter( ':checked' ).eq(0).trigger( 'click' );
 		},
 		get_payment_method: function() {
 			return wc_checkout_form.$checkout_form.find( 'input[name="payment_method"]:checked' ).val();
 		},
-		payment_method_selected: function() {
+		payment_method_selected: function( e ) {
+			e.stopPropagation();
+
 			if ( $( '.payment_methods input.input-radio' ).length > 1 ) {
-				var target_payment_box = $( 'div.payment_box.' + $( this ).attr( 'ID' ) );
+				var target_payment_box = $( 'div.payment_box.' + $( this ).attr( 'ID' ) ),
+					is_checked         = $( this ).is( ':checked' );
 
-				if ( $( this ).is( ':checked' ) && ! target_payment_box.is( ':visible' ) ) {
-					$( 'div.payment_box' ).filter( ':visible' ).slideUp( 250 );
+				if ( is_checked && ! target_payment_box.is( ':visible' ) ) {
+					$( 'div.payment_box' ).filter( ':visible' ).slideUp( 230 );
 
-					if ( $( this ).is( ':checked' ) ) {
-						$( 'div.payment_box.' + $( this ).attr( 'ID' ) ).slideDown( 250 );
+					if ( is_checked ) {
+						target_payment_box.slideDown( 230 );
 					}
 				}
 			} else {
@@ -333,7 +342,7 @@ jQuery( function( $ ) {
 
 					// Save payment details to a temporary object
 					var paymentDetails = {};
-					$( '.payment_box input' ).each( function() {
+					$( '.payment_box :input' ).each( function() {
 						var ID = $( this ).attr( 'id' );
 
 						if ( ID ) {
@@ -360,7 +369,7 @@ jQuery( function( $ ) {
 
 					// Fill in the payment details if possible without overwriting data if set.
 					if ( ! $.isEmptyObject( paymentDetails ) ) {
-						$( '.payment_box input' ).each( function() {
+						$( '.payment_box :input' ).each( function() {
 							var ID = $( this ).attr( 'id' );
 
 							if ( ID ) {

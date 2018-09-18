@@ -193,6 +193,11 @@ class WC_Admin_Setup_Wizard {
 			unset( $default_steps['shipping'] );
 		}
 
+		// Hide activate section when the user does not have capabilities to install plugins, think multiside admins not being a super admin.
+		if ( ! current_user_can( 'install_plugins' ) ) {
+			unset( $default_steps['activate'] );
+		}
+
 		// Whether or not there is a pending background install of Jetpack.
 		$pending_jetpack = ! class_exists( 'Jetpack' ) && get_option( 'woocommerce_setup_background_installing_jetpack' );
 
@@ -493,18 +498,18 @@ class WC_Admin_Setup_Wizard {
 	 */
 	public function wc_setup_store_setup_save() {
 		check_admin_referer( 'wc-setup' );
-		// @codingStandardsIgnoreStart
+
+		// phpcs:disable WordPress.VIP.SuperGlobalInputUsage.AccessDetected, WordPress.VIP.ValidatedSanitizedInput.InputNotValidated, WordPress.VIP.ValidatedSanitizedInput.MissingUnslash
 		$address        = sanitize_text_field( $_POST['store_address'] );
 		$address_2      = sanitize_text_field( $_POST['store_address_2'] );
 		$city           = sanitize_text_field( $_POST['store_city'] );
 		$country        = sanitize_text_field( $_POST['store_country'] );
-		$state          = sanitize_text_field( $_POST['store_state'] );
+		$state          = isset( $_POST['store_state'] ) ? sanitize_text_field( $_POST['store_state'] ) : false;
 		$postcode       = sanitize_text_field( $_POST['store_postcode'] );
 		$currency_code  = sanitize_text_field( $_POST['currency_code'] );
 		$product_type   = sanitize_text_field( $_POST['product_type'] );
 		$sell_in_person = isset( $_POST['sell_in_person'] ) && ( 'yes' === sanitize_text_field( $_POST['sell_in_person'] ) );
-
-		// @codingStandardsIgnoreEnd
+		$tracking       = false;
 
 		if ( ! $state ) {
 			$state = '*';
@@ -534,7 +539,12 @@ class WC_Admin_Setup_Wizard {
 			}
 		}
 
-		update_option( 'woocommerce_allow_tracking', 'no' );
+		if ( $tracking ) {
+			update_option( 'woocommerce_allow_tracking', 'yes' );
+			wp_schedule_single_event( time() + 10, 'woocommerce_tracker_send_event', array( true ) );
+		} else {
+			update_option( 'woocommerce_allow_tracking', 'no' );
+		}
 
 		WC_Install::create_pages();
 		wp_safe_redirect( esc_url_raw( $this->get_next_step_link() ) );
@@ -671,6 +681,40 @@ class WC_Admin_Setup_Wizard {
 	}
 
 	/**
+	 * Retrieve info for missing WooCommerce Services and/or Jetpack plugin.
+	 *
+	 * @return array
+	 */
+	protected function get_wcs_requisite_plugins() {
+		$plugins = array();
+		if ( ! is_plugin_active( 'woocommerce-services/woocommerce-services.php' ) && ! get_option( 'woocommerce_setup_background_installing_woocommerce-services' ) ) {
+			$plugins[] = array(
+				'name' => __( 'WooCommerce Services', 'woocommerce' ),
+				'slug' => 'woocommerce-services',
+			);
+		}
+		if ( ! is_plugin_active( 'jetpack/jetpack.php' ) && ! get_option( 'woocommerce_setup_background_installing_jetpack' ) ) {
+			$plugins[] = array(
+				'name' => __( 'Jetpack', 'woocommerce' ),
+				'slug' => 'jetpack',
+			);
+		}
+		return $plugins;
+	}
+
+	/**
+	 * Plugin install info message markup with heading.
+	 */
+	public function plugin_install_info() {
+		?>
+		<span class="plugin-install-info">
+			<span class="plugin-install-info-label"><?php esc_html_e( 'The following plugins will be installed and activated for you:', 'woocommerce' ); ?></span>
+			<span class="plugin-install-info-list"></span>
+		</span>
+		<?php
+	}
+
+	/**
 	 * Get the WCS shipping carrier for a given country code.
 	 *
 	 * Can also be used to determine if WCS supports a given country.
@@ -701,7 +745,7 @@ class WC_Admin_Setup_Wizard {
 		$shipping_methods = array(
 			'live_rates'    => array(
 				'name'        => __( 'Live Rates', 'woocommerce' ),
-				'description' => __( 'WooCommerce Services and Jetpack will be installed and activated for you.', 'woocommerce' ),
+				'description' => __( 'Powered by WooCommerce Services and Jetpack.', 'woocommerce' ),
 			),
 			'flat_rate'     => array(
 				'name'        => __( 'Flat Rate', 'woocommerce' ),
@@ -744,7 +788,12 @@ class WC_Admin_Setup_Wizard {
 		?>
 		<div class="wc-wizard-shipping-method-select">
 			<div class="wc-wizard-shipping-method-dropdown">
-				<select id="<?php echo esc_attr( "{$input_prefix}[method]" ); ?>" name="<?php echo esc_attr( "{$input_prefix}[method]" ); ?>" class="method wc-enhanced-select">
+				<select
+					id="<?php echo esc_attr( "{$input_prefix}[method]" ); ?>"
+					name="<?php echo esc_attr( "{$input_prefix}[method]" ); ?>"
+					class="method wc-enhanced-select"
+					data-plugins="<?php echo esc_attr( json_encode( $this->get_wcs_requisite_plugins() ) ); ?>"
+				>
 				<?php foreach ( $shipping_methods as $method_id => $method ) : ?>
 					<option value="<?php echo esc_attr( $method_id ); ?>" <?php selected( $selected, $method_id ); ?>><?php echo esc_html( $method['name'] ); ?></option>
 				<?php endforeach; ?>
@@ -861,6 +910,7 @@ class WC_Admin_Setup_Wizard {
 			</div>
 
 			<p class="wc-setup-actions step">
+				<?php $this->plugin_install_info(); ?>
 				<button type="submit" class="button-primary button button-large button-next" value="<?php esc_attr_e( 'Continue', 'woocommerce' ); ?>" name="save_step"><?php esc_html_e( 'Continue', 'woocommerce' ); ?></button>
 				<?php wp_nonce_field( 'wc-setup' ); ?>
 			</p>
@@ -1112,8 +1162,8 @@ class WC_Admin_Setup_Wizard {
 			'https://woocommerce.com/products/square/'
 		) . '</p>';
 
-		$gateways = array(
-			'paypal' => array(
+		return array(
+			'paypal'          => array(
 				'name'        => __( 'PayPal Standard', 'woocommerce' ),
 				'description' => __( 'Accept payments via PayPal using account balance or credit card.', 'woocommerce' ),
 				'image'       => '',
@@ -1128,8 +1178,6 @@ class WC_Admin_Setup_Wizard {
 				),
 			)
 		);
-
-		return $gateways;
 	}
 
 	/**
@@ -1229,6 +1277,15 @@ class WC_Admin_Setup_Wizard {
 			$should_enable_toggle = isset( $item_info['enabled'] ) && $item_info['enabled'];
 		}
 
+		$plugins = null;
+		if ( isset( $item_info['repo-slug'] ) ) {
+			$plugin = array(
+				'slug' => $item_info['repo-slug'],
+				'name' => $item_info['name'],
+			);
+			$plugins = array( $plugin );
+		}
+
 		?>
 		<li class="<?php echo esc_attr( $item_class ); ?>">
 			<div class="wc-wizard-service-name">
@@ -1275,6 +1332,7 @@ class WC_Admin_Setup_Wizard {
 									placeholder="<?php echo esc_attr( $setting['placeholder'] ); ?>"
 									<?php echo ( $setting['required'] ) ? 'required' : ''; ?>
 									<?php echo $is_checkbox ? checked( isset( $checked ) && $checked, true, false ) : ''; ?>
+									data-plugins="<?php echo esc_attr( json_encode( isset( $setting['plugins'] ) ? $setting['plugins'] : null ) ); ?>"
 								/>
 								<?php if ( ! empty( $setting['description'] ) ) : ?>
 									<span class="wc-wizard-service-settings-description"><?php echo esc_html( $setting['description'] ); ?></span>
@@ -1291,6 +1349,7 @@ class WC_Admin_Setup_Wizard {
 						type="checkbox"
 						name="wc-wizard-service-<?php echo esc_attr( $item_id ); ?>-enabled"
 						value="yes" <?php checked( $should_enable_toggle ); ?>
+						data-plugins="<?php echo esc_attr( json_encode( $plugins ) ); ?>"
 					/>
 					<label for="wc-wizard-service-<?php echo esc_attr( $item_id ); ?>">
 				</span>
@@ -1365,6 +1424,7 @@ class WC_Admin_Setup_Wizard {
 			</ul>
 			<?php endif; ?>
 			<p class="wc-setup-actions step">
+				<?php $this->plugin_install_info(); ?>
 				<button type="submit" class="button-primary button button-large button-next" value="<?php esc_attr_e( 'Continue', 'woocommerce' ); ?>" name="save_step"><?php esc_html_e( 'Continue', 'woocommerce' ); ?></button>
 				<?php wp_nonce_field( 'wc-setup' ); ?>
 			</p>
@@ -1432,14 +1492,16 @@ class WC_Admin_Setup_Wizard {
 		$img_url     = $item_info['img_url'];
 		$img_alt     = $item_info['img_alt'];
 		?>
-		<li>
-			<label class="recommended-item">
-				<input
-					class="recommended-item-checkbox"
-					type="checkbox"
-					name="<?php echo esc_attr( 'setup_' . $type ); ?>"
-					value="yes"
-					checked />
+		<li class="recommended-item checkbox">
+			<input
+				id="<?php echo esc_attr( 'wc_recommended_' . $type ); ?>"
+				type="checkbox"
+				name="<?php echo esc_attr( 'setup_' . $type ); ?>"
+				value="yes"
+				checked
+				data-plugins="<?php echo esc_attr( json_encode( isset( $item_info['plugins'] ) ? $item_info['plugins'] : null ) ); ?>"
+			/>
+			<label for="<?php echo esc_attr( 'wc_recommended_' . $type ); ?>">
 				<img
 					src="<?php echo esc_url( $img_url ); ?>"
 					class="<?php echo esc_attr( 'recommended-item-icon-' . $type ); ?> recommended-item-icon"
@@ -1505,6 +1567,7 @@ class WC_Admin_Setup_Wizard {
 						'description' => __( 'Save time and errors with automated tax calculation and collection at checkout. Powered by WooCommerce Services and Jetpack.', 'woocommerce' ),
 						'img_url'     => WC()->plugin_url() . '/assets/images/obw-taxes-icon.svg',
 						'img_alt'     => __( 'automated taxes icon', 'woocommerce' ),
+						'plugins'     => $this->get_wcs_requisite_plugins(),
 					) );
 				endif;
 
@@ -1515,11 +1578,13 @@ class WC_Admin_Setup_Wizard {
 						'description' => __( 'Join the 16 million customers who use MailChimp. Sync list and store data to send automated emails, and targeted campaigns.', 'woocommerce' ),
 						'img_url'     => WC()->plugin_url() . '/assets/images/obw-mailchimp-icon.svg',
 						'img_alt'     => __( 'MailChimp icon', 'woocommerce' ),
+						'plugins'     => array( array( 'name' => __( 'MailChimp for WooCommerce', 'woocommerce' ), 'slug' => 'mailchimp-for-woocommerce' ) ),
 					) );
 				endif;
 			?>
 		</ul>
 			<p class="wc-setup-actions step">
+				<?php $this->plugin_install_info(); ?>
 				<button type="submit" class="button-primary button button-large button-next" value="<?php esc_attr_e( 'Continue', 'woocommerce' ); ?>" name="save_step"><?php esc_html_e( 'Continue', 'woocommerce' ); ?></button>
 				<?php wp_nonce_field( 'wc-setup' ); ?>
 			</p>

@@ -102,6 +102,7 @@ class WC_Countries {
 			'AT' => array(),
 			'AX' => array(),
 			'BE' => array(),
+			'BH' => array(),
 			'BI' => array(),
 			'CZ' => array(),
 			'DE' => array(),
@@ -117,6 +118,7 @@ class WC_Countries {
 			'KR' => array(),
 			'KW' => array(),
 			'LB' => array(),
+			'LU' => array(),
 			'MQ' => array(),
 			'NL' => array(),
 			'NO' => array(),
@@ -612,13 +614,18 @@ class WC_Countries {
 	 * @return array
 	 */
 	public function get_default_address_fields() {
+		if ( 'optional' === get_option( 'woocommerce_checkout_address_2_field', 'optional' ) ) {
+			$address_2_placeholder = __( 'Apartment, suite, unit etc. (optional)', 'woocommerce' );
+		} else {
+			$address_2_placeholder = __( 'Apartment, suite, unit etc.', 'woocommerce' );
+		}
+
 		$fields = array(
 			'first_name' => array(
 				'label'        => __( 'First name', 'woocommerce' ),
 				'required'     => true,
 				'class'        => array( 'form-row-first' ),
 				'autocomplete' => 'given-name',
-				'autofocus'    => true,
 				'priority'     => 10,
 			),
 			'last_name'  => array(
@@ -653,9 +660,8 @@ class WC_Countries {
 				'priority'     => 50,
 			),
 			'address_2'  => array(
-				'placeholder'  => esc_attr__( 'Apartment, suite, unit etc. (optional)', 'woocommerce' ),
+				'placeholder'  => esc_attr( $address_2_placeholder ),
 				'class'        => array( 'form-row-wide', 'address-field' ),
-				'required'     => false,
 				'autocomplete' => 'address-line2',
 				'priority'     => 60,
 				'required'     => 'required' === get_option( 'woocommerce_checkout_address_2_field', 'optional' ),
@@ -786,6 +792,11 @@ class WC_Countries {
 						'state'    => array(
 							'required' => false,
 							'label'    => __( 'Province', 'woocommerce' ),
+						),
+					),
+					'BH' => array(
+						'state' => array(
+							'required' => false,
 						),
 					),
 					'BI' => array(
@@ -1091,6 +1102,11 @@ class WC_Countries {
 							'required' => false,
 						),
 					),
+					'LU' => array(
+						'state' => array(
+							'required' => false,
+						),
+					),
 					'MD' => array(
 						'state' => array(
 							'label' => __( 'Municipality / District', 'woocommerce' ),
@@ -1216,10 +1232,10 @@ class WC_Countries {
 
 		// Add email and phone fields.
 		if ( 'billing_' === $type ) {
-			if ( 'hidden' !== get_option( 'woocommerce_checkout_phone_field', 'optional' ) ) {
+			if ( 'hidden' !== get_option( 'woocommerce_checkout_phone_field', 'required' ) ) {
 				$address_fields['billing_phone'] = array(
 					'label'        => __( 'Phone', 'woocommerce' ),
-					'required'     => 'required' === get_option( 'woocommerce_checkout_phone_field', 'optional' ),
+					'required'     => 'required' === get_option( 'woocommerce_checkout_phone_field', 'required' ),
 					'type'         => 'tel',
 					'class'        => array( 'form-row-wide' ),
 					'validate'     => array( 'phone' ),

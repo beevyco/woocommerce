@@ -38,7 +38,23 @@ $settings = array(
 		'type'        => 'title',
 		'description' => '',
 	),
-	'ipn_notification' => array(
+	'testmode'              => array(
+		'title'       => __( 'PayPal sandbox', 'woocommerce' ),
+		'type'        => 'checkbox',
+		'label'       => __( 'Enable PayPal sandbox', 'woocommerce' ),
+		'default'     => 'no',
+		/* translators: %s: URL */
+		'description' => sprintf( __( 'PayPal sandbox can be used to test payments. Sign up for a <a href="%s">developer account</a>.', 'woocommerce' ), 'https://developer.paypal.com/' ),
+	),
+	'debug'                 => array(
+		'title'       => __( 'Debug log', 'woocommerce' ),
+		'type'        => 'checkbox',
+		'label'       => __( 'Enable logging', 'woocommerce' ),
+		'default'     => 'no',
+		/* translators: %s: URL */
+		'description' => sprintf( __( 'Log PayPal events, such as IPN requests, inside %s Note: this may log personal information. We recommend using this for debugging purposes only and deleting the logs when finished.', 'woocommerce' ), '<code>' . WC_Log_Handler_File::get_log_file_path( 'paypal' ) . '</code>' ),
+	),
+	'ipn_notification'      => array(
 		'title'       => __( 'IPN Email Notifications', 'woocommerce' ),
 		'type'        => 'checkbox',
 		'label'       => __( 'Enable IPN email notifications', 'woocommerce' ),

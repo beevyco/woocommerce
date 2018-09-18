@@ -131,9 +131,9 @@ jQuery( function ( $ ) {
 			var regular_price = parseFloat( window.accounting.unformat( regular_price_field.val(), woocommerce_admin.mon_decimal_point ) );
 
 			if ( sale_price >= regular_price ) {
-				$( document.body ).triggerHandler( 'wc_add_error_tip', [ $(this), 'i18_sale_less_than_regular_error' ] );
+				$( document.body ).triggerHandler( 'wc_add_error_tip', [ $(this), 'i18n_sale_less_than_regular_error' ] );
 			} else {
-				$( document.body ).triggerHandler( 'wc_remove_error_tip', [ $(this), 'i18_sale_less_than_regular_error' ] );
+				$( document.body ).triggerHandler( 'wc_remove_error_tip', [ $(this), 'i18n_sale_less_than_regular_error' ] );
 			}
 		})
 
@@ -303,7 +303,6 @@ jQuery( function ( $ ) {
 	$( '.wc_gateways' ).on( 'click', '.wc-payment-gateway-method-toggle-enabled', function() {
 		var $link   = $( this ),
 		    $row    = $link.closest( 'tr' ),
-			$table  = $row.closest( 'div' ),
 			$toggle = $link.find( '.woocommerce-input-toggle' );
 
 		var data = {
@@ -312,13 +311,7 @@ jQuery( function ( $ ) {
 			gateway_id: $row.data( 'gateway_id' )
 		};
 
-		$table.block({
-			message: null,
-			overlayCSS: {
-				background: '#fff',
-				opacity: 0.6
-			}
-		});
+		$toggle.addClass( 'woocommerce-input-toggle--loading' );
 
 		$.ajax( {
 			url:      woocommerce_admin.ajax_url,
@@ -329,18 +322,25 @@ jQuery( function ( $ ) {
 				if ( true === response.data ) {
 					$toggle.removeClass( 'woocommerce-input-toggle--enabled, woocommerce-input-toggle--disabled' );
 					$toggle.addClass( 'woocommerce-input-toggle--enabled' );
+					$toggle.removeClass( 'woocommerce-input-toggle--loading' );
 				} else if ( false === response.data ) {
 					$toggle.removeClass( 'woocommerce-input-toggle--enabled, woocommerce-input-toggle--disabled' );
 					$toggle.addClass( 'woocommerce-input-toggle--disabled' );
+					$toggle.removeClass( 'woocommerce-input-toggle--loading' );
 				} else if ( 'needs_setup' === response.data ) {
 					window.location.href = $link.attr( 'href' );
 				}
-			},
-			complete: function() {
-				$table.unblock();
 			}
 		} );
 
 		return false;
+	});
+
+	$( '#wpbody' ).on( 'click', '#doaction, #doaction2', function() {
+		var action = $( this ).is( '#doaction' ) ? $( '#bulk-action-selector-top' ).val() : $( '#bulk-action-selector-bottom' ).val();
+
+		if ( 'remove_personal_data' === action ) {
+			return window.confirm( woocommerce_admin.i18n_remove_personal_data_notice );
+		}
 	});
 });

@@ -35,7 +35,7 @@ class WC_Auth {
 		add_action( 'init', array( __CLASS__, 'add_endpoint' ), 0 );
 
 		// Handle auth requests.
-		add_action( 'parse_request.', array( $this, 'handle_auth_requests' ), 0 );
+		add_action( 'parse_request', array( $this, 'handle_auth_requests' ), 0 );
 	}
 
 	/**
@@ -318,10 +318,6 @@ class WC_Auth {
 		$consumer_data = array();
 
 		try {
-			if ( 'yes' !== get_option( 'woocommerce_api_enabled' ) ) {
-				throw new Exception( __( 'API disabled!', 'woocommerce' ) );
-			}
-
 			$route = strtolower( wc_clean( $route ) );
 			$this->make_validation();
 
